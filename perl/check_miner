@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+# Check CGMiner status and reboot if hung
+
+use strict;
+use Socket;
+
+my $BestShareFile = "/home/pi/devel/c/BestShare";
+my $EventLogfile = "/home/pi/devel/c/datalog";
+my $PerfLogfile = "/home/pi/devel/c/mining_perf";
+my $DetailsLog = "/home/pi/devel/c/mining_details";
+
+my $BestShare = 0;
+my $LastBestShare = 0;
+my $MegaHashes = 0;
+my $HardwareFails = 0;
+
+my $dest_serv_params = sockaddr_in(4028, inet_aton('localhost'));
+
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+
+
+socket (S, &AF_INET, &SOCK_STREAM, 0) or die "socket: $!";
+if (!connect (S, $dest_serv_params)) {
+  # Cannot connect ==> retry 2 Minutes later and shutdown if unsuccessful
+  sleep(120);
+  if (!connect(S, $dest_serv_params)) {
+    if (open(LOGFILE, ">>",  $EventLogfile)) {
+      print LOGFILE sprintf("%d-%02d-%02d %02d:%02d:%02d\tMiner not running!\n", $year, $mon, $mday, $hour, $min, $sec);
+      close(LOGFILE);
+    }
+    sleep(5);
+    system("sudo shutdown -h now");
+  }
+}
+ 
+select (S); $| = 1; select (STDOUT); # Eliminate STDIO buffering
+
+print S "summary";
+open(LOGFILE, ">>", $DetailsLog);
+print LOGFILE "\n\n";
+while(<S>) {
+  if (/Best Share=(\d+),/) {
+    $BestShare = $1;
+  }
+  if (/MHS 5s=([0-9.]+),/) {
+    $MegaHashes = $1;
+  }
+  if (/Device Hardware\%=([0-9.]+),/) {
+    $HardwareFails = $1;
+  }
+  print LOGFILE join("\n", split(",", $_));
+}
+close(LOGFILE);
+if (open(DATAFILE, $BestShareFile)) {
+  $LastBestShare = int(<DATAFILE>);
+  close(DATAFILE);
+} else {
+  $LastBestShare = 0;
+}
+if ($BestShare > $LastBestShare) {
+  if (open(DATAFILE, ">", $BestShareFile)) {
+    print DATAFILE $BestShare;
+    close(DATAFILE)
+  }
+}
+if (open(DATAFILE, ">>", $PerfLogfile)) {
+  print DATAFILE sprintf("%d-%02d-%02d %02d:%02d:%02d\t%f\t%f\n", $year, $mon, $mday, $hour, $min, $sec, $MegaHashes, $HardwareFails);
+  close(DATAFILE);
+}

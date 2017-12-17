@@ -1,0 +1,23 @@
+#!/bin/bash
+if test -a datalog.19 ; then rm datalog.19 ;  fi
+if test -a datalog.18 ; then mv datalog.18 datalog.19 ;  fi
+if test -a datalog.17 ; then mv datalog.17 datalog.18 ;  fi
+if test -a datalog.16 ; then mv datalog.16 datalog.17 ;  fi
+if test -a datalog.15 ; then mv datalog.15 datalog.16 ;  fi
+if test -a datalog.14 ; then mv datalog.14 datalog.15 ;  fi
+if test -a datalog.13 ; then mv datalog.13 datalog.14 ;  fi
+if test -a datalog.12 ; then mv datalog.12 datalog.13 ;  fi
+if test -a datalog.11 ; then mv datalog.11 datalog.12 ;  fi
+if test -a datalog.10 ; then mv datalog.10 datalog.11 ;  fi
+if test -a datalog.9 ; then mv datalog.9 datalog.10 ;  fi
+if test -a datalog.8 ; then mv datalog.8 datalog.9 ;  fi
+if test -a datalog.7 ; then mv datalog.7 datalog.8 ;  fi
+if test -a datalog.6 ; then mv datalog.6 datalog.7 ;  fi
+if test -a datalog.5 ; then mv datalog.5 datalog.6 ;  fi
+if test -a datalog.4 ; then mv datalog.4 datalog.5 ;  fi
+if test -a datalog.3 ; then mv datalog.3 datalog.4 ;  fi
+if test -a datalog.2 ; then mv datalog.2 datalog.3 ;  fi
+if test -a datalog.1 ; then mv datalog.1 datalog.2 ;  fi
+if test -a datalog ; then mv datalog datalog.1 ;  fi
+
+

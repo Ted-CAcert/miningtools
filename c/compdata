@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+use strict;
+
+my $LastTS;
+my $LastVal;
+
+$LastVal = 0;
+
+while(<>) {
+  if (/^(\d{4}-\d{2}-\d{2} \d{2}):\d{2}:\d{2}\s+(\d{3})/) {
+    if ($LastVal != $2) {
+      print $_;
+      $LastVal = $2;
+      $LastTS = $1;
+    } elsif ($LastTS != $1) {
+      print $_;
+      $LastVal = $2;
+      $LastTS = $1;
+    }
+  } else {
+    print $_;
+  }
+}
+

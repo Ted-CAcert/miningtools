@@ -1,0 +1,107 @@
+#!/usr/bin/perl
+# Create system status for web page
+
+use strict;
+use GD;
+use DateTime;
+use Time::Local;
+
+my $datafiles = "/home/pi/devel/c/datalog*";
+my $OutputFile = "/var/www/power_history.gif";
+my $TimeZone="Europe/Berlin";
+
+my $CurTime;
+my $NumX = 500;
+my $TimeInt = 32*60*60;
+
+my @ValArray;
+my @FactorArray;
+
+
+sub ParseDatafiles()
+{
+  my $CurFile;
+  my ($year, $mon, $day, $hour, $min, $sec);
+  my $val1;
+  my $time;
+  my $dt;
+
+  $CurTime = time();
+#  $CurTime = 1397667516; # Zum testen
+
+  foreach $CurFile (glob($datafiles)) {
+    print "$CurFile...\n";
+    open(INFILE, $CurFile);
+    while(<INFILE>) {
+      if (/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)\t(\d+)/) {
+ #       $dt = DateTime->new(
+ #         year => $1,
+ #         month => $2,
+ #         day => $3,
+ #         hour => $4,
+ #         minute => $5,
+ #         second => $6,          
+ #       );
+ #       $time = $dt->epoch;
+        $time = timelocal($6, $5, $4, $3, $2-1, $1-1900);
+        
+        if ($time > $CurTime -$TimeInt) {
+          my $Index = int((($time + $TimeInt - $CurTime)*$NumX)/$TimeInt);
+          $ValArray[$Index] += $7;
+          $FactorArray[$Index] += 1;
+        }
+      }
+    }
+    close(INFILE);
+  }
+}
+
+sub CreateGraph()
+{
+  my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($CurTime-$TimeInt);
+  my $MaxY = 280; 
+  my $im = new GD::Image($NumX, $MaxY);
+  my $white = $im->colorAllocate(255, 255, 255);
+  my $black = $im->colorAllocate(0, 0, 0);
+  my $green = $im->colorAllocate(0, 255, 0);
+  my $red = $im->colorAllocate(255, 0, 0);
+  my $i;
+  my $y;
+  my $HourStart = ((60-$min)*60-$sec)*$NumX/$TimeInt;
+
+  for ($i=0; $i < $NumX; $i++) {
+    if ($FactorArray[$i] > 0) {
+      $y = (($ValArray[$i]/$FactorArray[$i])-820)*3;
+    } else {
+      $y = 0;
+    }
+    $im->line($i, 300, $i, $MaxY-$y, $green);
+  }
+
+  for($i = $HourStart; $i < $TimeInt; $i += ($NumX*3600)/$TimeInt) {
+    $hour++;
+    if ($hour == 24) {
+      $im->line($i, 0, $i, $MaxY, $red);
+      $hour=0;
+    } else {
+      $im->setStyle($black, $black, gdTransparent, gdTransparent, gdTransparent, gdTransparent);
+      $im->line($i, 0, $i, $MaxY, gdStyled);
+    }
+    $im->string(gdSmallFont, $i+2, 5, sprintf("%02d", $hour), $black); 
+  }
+  $im->line(0, $MaxY - 80*3, $NumX, $MaxY - 80*3, gdStyled);
+  $im->line(0, $MaxY - 30*3, $NumX, $MaxY - 30*3, gdStyled);
+  $im->setStyle($red, $red, gdTransparent, gdTransparent, gdTransparent, gdTransparent);
+  $im->line(0, $MaxY - 50*3, $NumX, $MaxY - 50*3, gdStyled);
+  $im->line(0, $MaxY - 10*3, $NumX, $MaxY - 10*3, gdStyled);
+
+  open(OUTFILE, ">$OutputFile");
+  binmode OUTFILE;
+  print OUTFILE $im->gif();
+  close(OUTFILE);
+}
+
+ParseDatafiles();
+CreateGraph();
+
+system("cat /home/pi/devel/perl/smb_batch | smbclient --no-pass //cerberus/cerberus");
