@@ -11,8 +11,8 @@ my $OutputFile = "/var/www/power_history.gif";
 my $TimeZone="Europe/Berlin";
 
 my $CurTime;
-my $NumX = 500;
-my $TimeInt = 32*60*60;
+my $NumX = 1000;
+my $TimeInt = 64*60*60;
 
 my @ValArray;
 my @FactorArray;
@@ -91,6 +91,8 @@ sub CreateGraph()
   }
   $im->line(0, $MaxY - 80*3, $NumX, $MaxY - 80*3, gdStyled);
   $im->line(0, $MaxY - 30*3, $NumX, $MaxY - 30*3, gdStyled);
+  $im->string(gdSmallFont, 0, $MaxY - 80*3 - 15, "14V", $black); 
+  $im->string(gdSmallFont, 0, $MaxY - 30*3 - 15, "13V", $black); 
   $im->setStyle($red, $red, gdTransparent, gdTransparent, gdTransparent, gdTransparent);
   $im->line(0, $MaxY - 50*3, $NumX, $MaxY - 50*3, gdStyled);
   $im->line(0, $MaxY - 10*3, $NumX, $MaxY - 10*3, gdStyled);
@@ -104,4 +106,4 @@ sub CreateGraph()
 ParseDatafiles();
 CreateGraph();
 
-system("cat /home/pi/devel/perl/smb_batch | smbclient --no-pass //cerberus/cerberus");
+#system("cat /home/pi/devel/perl/smb_batch | smbclient --no-pass //cerberus/cerberus");
